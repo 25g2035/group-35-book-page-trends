@@ -1,4 +1,5 @@
 import csv
+import os
 import requests
 import xml.etree.ElementTree as ET
 
@@ -55,8 +56,6 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
             }
             books.append(book)
 
-        print(len(books))
-
         # 次のページへ
         start_idx += cnt_per_page
         if len(items) < cnt_per_page:
@@ -64,14 +63,22 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
 
     return books
 
+def search_month(y, m):
+    str = f"{y}-{m:02}"
+    from_year = str
+    to_year = str
+    books = search_books(from_year=from_year, to_year=to_year, cnt_per_page=500, max_pages=1, start_idx=1)
+    print(f"{str}: {len(books)}件")
+    return books
+
 # 使用例
-from_year = 2020
-to_year = 2020
-books = search_books(from_year=2020, to_year=2020, cnt_per_page=400, max_pages=3, start_idx=1)
-print(f"取得した冊数: {len(books)}")
+y = 2020
+m = 3
+books = search_month(y, m)
 
 # tsvに出力
-output_file = f"{from_year}-{to_year}.tsv"
+output_file = f"data/{y}-{m}.tsv"
+os.makedirs(os.path.dirname(output_file), exist_ok=True)    # dataフォルダがなければ作成
 with open(output_file, "w", encoding="utf-8", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=["title", "issued", "page_count"], delimiter="\t")
     writer.writeheader()
