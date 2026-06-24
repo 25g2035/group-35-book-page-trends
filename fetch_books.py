@@ -13,8 +13,8 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
             "ndc": 9,    # 文学
             "from": str(from_year),
             "until": str(to_year),
-            "cnt": cnt_per_page,
-            "idx": start_idx,
+            "cnt": cnt_per_page, # 最大取得件数（デフォルトは200件、最大で500件）
+            "idx": start_idx,   # ページングしても501件目以降は取得できない
         }
 
         response = requests.get(base_url, params=params, timeout=150)
@@ -31,7 +31,7 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
 
         items = root.findall(".//item")
         if not items:
-            print("これ以上データがありません。")
+            #print("これ以上データがありません。")
             break
 
         for item in root.findall(".//item"):
@@ -64,11 +64,11 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
     return books
 
 def search_month(y, m):
-    str = f"{y}-{m:02}"
-    from_year = str
-    to_year = str
+    date_str = f"{y}-{m:02}"
+    from_year = date_str
+    to_year = date_str
     books = search_books(from_year=from_year, to_year=to_year, cnt_per_page=500, max_pages=1, start_idx=1)
-    print(f"{str}: {len(books)}件")
+    print(f"{date_str}: {len(books)}件")
     return books
 
 def search_year(y):
@@ -85,8 +85,12 @@ def write_tsv(name, books):
         writer = csv.DictWriter(f, fieldnames=["title", "issued", "page_count"], delimiter="\t")
         writer.writeheader()
         writer.writerows(books)
-    print(f"データを {output_file} に保存しました。")
+    print(f"{len(books)}件のデータを {output_file} に保存しました。")
 
-y = 2020
-books = search_year(y)
-write_tsv(str(y), books)
+if __name__ == "__main__":
+    # 使用例: 2020年から2025年までのデータを取得
+    from_year = 2020
+    to_year = 2025
+    for y in range(from_year, to_year + 1):
+        books = search_year(y)
+        write_tsv(str(y), books)
