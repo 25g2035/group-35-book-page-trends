@@ -46,7 +46,7 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
 
             # レコード追加
             book = {
-                "issued": item.findtext("dcterms:issued", namespaces=ns),   # 出版年
+                #"issued": item.findtext("dcterms:issued", namespaces=ns),   # 出版年
                 "page_count": page_count,    # ページ数
                 "title": item.findtext("title"),    # タイトル
                 #"creator": item.findtext("dc:creator", namespaces=ns),
@@ -69,6 +69,10 @@ def search_month(y, m):
     to_year = date_str
     books = search_books(from_year=from_year, to_year=to_year, cnt_per_page=500, max_pages=1, start_idx=1)
     print(f"{date_str}: {len(books)}件")
+    
+    for book in books:
+        book["year"] = y
+        book["month"] = m
     return books
 
 def search_year(y):
@@ -82,7 +86,7 @@ def write_tsv(name, books):
     output_file = f"data/{name}.tsv"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)    # dataフォルダがなければ作成
     with open(output_file, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["title", "issued", "page_count"], delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=["year", "month", "page_count", "title"], delimiter="\t")
         writer.writeheader()
         writer.writerows(books)
     print(f"{len(books)}件のデータを {output_file} に保存しました。")
