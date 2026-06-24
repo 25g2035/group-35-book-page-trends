@@ -71,16 +71,22 @@ def search_month(y, m):
     print(f"{str}: {len(books)}件")
     return books
 
-# 使用例
-y = 2020
-m = 3
-books = search_month(y, m)
+def search_year(y):
+    books = []
+    for m in range(1, 13):
+        books.extend(search_month(y, m))
+    return books
 
 # tsvに出力
-output_file = f"data/{y}-{m}.tsv"
-os.makedirs(os.path.dirname(output_file), exist_ok=True)    # dataフォルダがなければ作成
-with open(output_file, "w", encoding="utf-8", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=["title", "issued", "page_count"], delimiter="\t")
-    writer.writeheader()
-    writer.writerows(books)
-print(f"データを {output_file} に保存しました。")
+def write_tsv(name, books):
+    output_file = f"data/{name}.tsv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)    # dataフォルダがなければ作成
+    with open(output_file, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["title", "issued", "page_count"], delimiter="\t")
+        writer.writeheader()
+        writer.writerows(books)
+    print(f"データを {output_file} に保存しました。")
+
+y = 2020
+books = search_year(y)
+write_tsv(str(y), books)
