@@ -13,9 +13,10 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
             "from": str(from_year),
             "until": str(to_year),
             "cnt": cnt_per_page,
+            "idx": start_idx,
         }
 
-        response = requests.get(base_url, params=params, timeout=15)
+        response = requests.get(base_url, params=params, timeout=150)
 
         #print(response.text)
 
@@ -66,7 +67,7 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
 # 使用例
 from_year = 2020
 to_year = 2020
-books = search_books(from_year=2020, to_year=2020, cnt_per_page=400, max_pages=5, start_idx=1)
+books = search_books(from_year=2020, to_year=2020, cnt_per_page=400, max_pages=3, start_idx=1)
 print(f"取得した冊数: {len(books)}")
 
 # tsvに出力
