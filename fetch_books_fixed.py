@@ -92,10 +92,11 @@ def percentile(sorted_values, p):
     return sorted_values[lower] * (upper - k) + sorted_values[upper] * (k - lower)
 
 
-def print_page_stats(books):
+def print_page_stats(books, label=None):
     page_counts = sorted(int(book["page_count"]) for book in books if has_page_count(book))
     if not page_counts:
-        print("ページ数があるデータがないため、統計を表示できません。")
+        # print("ページ数があるデータがないため、統計を表示できません。")
+        return
         return
 
     count = len(page_counts)
@@ -112,27 +113,31 @@ def print_page_stats(books):
     upper_fence = q3 + 1.5 * iqr
     outlier_count = sum(1 for x in page_counts if x < lower_fence or x > upper_fence)
 
+    # 年代ラベルと数値のみを改行区切りで出力
     print("")
-    print("ページ数の統計")
-    print(f"件数: {count}")
-    print(f"最小値: {min(page_counts)}")
-    print(f"最大値: {max(page_counts)}")
-    print(f"範囲: {max(page_counts) - min(page_counts)}")
-    print(f"合計ページ数: {sum(page_counts)}")
-    print(f"平均: {mean:.2f}")
-    print(f"中央値: {median:.2f}")
-    print(f"最頻値: {modes[:10]}")
-    print(f"標本分散: {variance:.2f}")
-    print(f"標本標準偏差: {stdev:.2f}")
-    print(f"母標準偏差: {pstdev:.2f}")
-    print(f"第1四分位数(Q1): {q1:.2f}")
-    print(f"第3四分位数(Q3): {q3:.2f}")
-    print(f"四分位範囲(IQR): {iqr:.2f}")
-    print(f"10パーセンタイル: {percentile(page_counts, 10):.2f}")
-    print(f"90パーセンタイル: {percentile(page_counts, 90):.2f}")
-    print(f"外れ値候補数(IQR法): {outlier_count}")
-    print(f"100ページ未満: {sum(1 for x in page_counts if x < 100)}")
-    print(f"500ページ以上: {sum(1 for x in page_counts if x >= 500)}")
+    if label:
+        print(label)
+    print("")
+    print(count)
+    print(min(page_counts))
+    print(max(page_counts))
+    print(max(page_counts) - min(page_counts))
+    print(sum(page_counts))
+    print(f"{mean:.2f}")
+    print(f"{median:.2f}")
+    print(",".join(str(m) for m in modes[:10]))
+    print(f"{variance:.2f}")
+    print(f"{stdev:.2f}")
+    print(f"{pstdev:.2f}")
+    print(f"{q1:.2f}")
+    print(f"{q3:.2f}")
+    print(f"{iqr:.2f}")
+    print(f"{percentile(page_counts, 10):.2f}")
+    print(f"{percentile(page_counts, 90):.2f}")
+    print(outlier_count)
+    print(sum(1 for x in page_counts if x < 100))
+    print(sum(1 for x in page_counts if x >= 500))
+    print("")
 
 
 def search_books(from_year, to_year, cnt_per_page=500, max_pages=None, start_idx=1):
@@ -156,7 +161,7 @@ def search_books(from_year, to_year, cnt_per_page=500, max_pages=None, start_idx
                 response.raise_for_status()
                 break
             wait_seconds = 2 ** retry
-            print(f"HTTP 429のため {wait_seconds} 秒待って再試行します。")
+            # print(f"HTTP 429のため {wait_seconds} 秒待って再試行します。")
             time.sleep(wait_seconds)
         else:
             response.raise_for_status()
@@ -215,7 +220,7 @@ def search_month(y, m):
     from_year = date_str
     to_year = date_str
     books = search_books(from_year=from_year, to_year=to_year, cnt_per_page=500, max_pages=None, start_idx=1)
-    print(f"{date_str}: {len(books)}件")
+    # print(f"{date_str}: {len(books)}件")
 
     for book in books:
         book["year"] = y
@@ -237,13 +242,14 @@ def write_tsv(name, books):
     books = [book for book in books if has_page_count(book)]
     books = remove_duplicates(books)
     if os.path.exists(output_file):
-        print(f"{output_file} は既にあるため上書きします。")
+        # print(f"{output_file} は既にあるため上書きします。")
+        pass
     with open(output_file, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["year", "month", "page_count", "title", "creator", "publisher", "isbn", "link"], delimiter="\t")
         writer.writeheader()
         writer.writerows(books)
-    print(f"{len(books)}件のデータを {output_file} に保存しました。")
-    print_page_stats(books)
+    # print(f"{len(books)}件のデータを {output_file} に保存しました。")
+    print_page_stats(books, name)
 
 
 def search_years_and_write_tsv(from_year, to_year):
@@ -255,5 +261,6 @@ def search_years_and_write_tsv(from_year, to_year):
 
 
 if __name__ == "__main__":
-    # 使用例: 2020年から2025年までのデータを取得しTSVファイルを出力
-    search_years_and_write_tsv(2020, 2025)
+    # 使用例: 1990年から1999年までのデータを取得しTSVファイルを出力
+    for y in range(1990, 2000):
+        search_years_and_write_tsv(y, y)
