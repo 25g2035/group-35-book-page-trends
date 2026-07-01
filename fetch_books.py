@@ -40,7 +40,7 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
             page_count = None
             if extent:
                 import re
-                match = re.search(r'(\d+)p', extent)
+                match = re.search(r'^(\d+)p$', extent)
                 if match:
                     page_count = int(match.group(1))
 
