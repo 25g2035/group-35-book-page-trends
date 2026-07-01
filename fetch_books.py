@@ -49,8 +49,8 @@ def search_books(from_year, to_year, cnt_per_page, max_pages, start_idx):
                 #"issued": item.findtext("dcterms:issued", namespaces=ns),   # 出版年
                 "page_count": page_count,    # ページ数
                 "title": item.findtext("title"),    # タイトル
-                #"creator": item.findtext("dc:creator", namespaces=ns),
-                #"publisher": item.findtext("dc:publisher", namespaces=ns),
+                "creator": item.findtext("dc:creator", namespaces=ns),
+                "publisher": item.findtext("dc:publisher", namespaces=ns),
                 #"isbn": item.findtext("dc:identifier", namespaces=ns),
                 #"link": item.findtext("link")
             }
@@ -86,7 +86,7 @@ def write_tsv(name, books):
     output_file = f"data/{name}.tsv"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)    # dataフォルダがなければ作成
     with open(output_file, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["year", "month", "page_count", "title"], delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=["year", "month", "page_count", "title", "creator", "publisher"], delimiter="\t")
         writer.writeheader()
         writer.writerows(books)
     print(f"{len(books)}件のデータを {output_file} に保存しました。")
