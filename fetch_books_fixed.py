@@ -95,8 +95,6 @@ def percentile(sorted_values, p):
 def print_page_stats(books, label=None):
     page_counts = sorted(int(book["page_count"]) for book in books if has_page_count(book))
     if not page_counts:
-        # print("ページ数があるデータがないため、統計を表示できません。")
-        return
         return
 
     count = len(page_counts)
@@ -113,7 +111,7 @@ def print_page_stats(books, label=None):
     upper_fence = q3 + 1.5 * iqr
     outlier_count = sum(1 for x in page_counts if x < lower_fence or x > upper_fence)
 
-    # 年代ラベルと数値のみを改行区切りで出力
+    # Excelに貼り付けやすいよう、見出しは出さず値だけを指定順で出力する。
     print("")
     if label:
         print(label)
@@ -151,8 +149,8 @@ def search_books(from_year, to_year, cnt_per_page=500, max_pages=None, start_idx
             "ndc": 9,    # 文学
             "from": str(from_year),
             "until": str(to_year),
-            "cnt": cnt_per_page, # 最大取得件数（デフォルトは200件、最大で500件）
-            "idx": start_idx,   # 501件目以降はidxを進めて取得する
+            "cnt": cnt_per_page,
+            "idx": start_idx,
         }
 
         for retry in range(4):
@@ -161,28 +159,23 @@ def search_books(from_year, to_year, cnt_per_page=500, max_pages=None, start_idx
                 response.raise_for_status()
                 break
             wait_seconds = 2 ** retry
-            # print(f"HTTP 429のため {wait_seconds} 秒待って再試行します。")
             time.sleep(wait_seconds)
         else:
             response.raise_for_status()
-
-        #print(response.text)
 
         root = ET.fromstring(response.content)
 
         ns = {
             "dc": "http://purl.org/dc/elements/1.1/",
             "dcterms": "http://purl.org/dc/terms/",
-            "opensearch": "http://a9.com/-/spec/opensearchrss/1.0/"
+            "opensearch": "http://a9.com/-/spec/opensearchrss/1.0/",
         }
 
         items = root.findall(".//item")
         if not items:
-            #print("これ以上データがありません。")
             break
 
         for item in root.findall(".//item"):
-            # ページ数取得
             extent = item.findtext("dc:extent", namespaces=ns)
             page_count = None
             if extent:
@@ -192,19 +185,16 @@ def search_books(from_year, to_year, cnt_per_page=500, max_pages=None, start_idx
             if page_count is None:
                 continue
 
-            # レコード追加
             book = {
-                #"issued": item.findtext("dcterms:issued", namespaces=ns),   # 出版年
-                "page_count": page_count,    # ページ数
-                "title": item.findtext("title"),    # タイトル
+                "page_count": page_count,
+                "title": item.findtext("title"),
                 "creator": item.findtext("dc:creator", namespaces=ns),
                 "publisher": item.findtext("dc:publisher", namespaces=ns),
                 "isbn": get_isbn(item, ns),
-                "link": item.findtext("link")
+                "link": item.findtext("link"),
             }
             books.append(book)
 
-        # 次のページへ
         page += 1
         start_idx += cnt_per_page
         if len(items) < cnt_per_page:
@@ -217,10 +207,7 @@ def search_books(from_year, to_year, cnt_per_page=500, max_pages=None, start_idx
 
 def search_month(y, m):
     date_str = f"{y}-{m:02}"
-    from_year = date_str
-    to_year = date_str
-    books = search_books(from_year=from_year, to_year=to_year, cnt_per_page=500, max_pages=None, start_idx=1)
-    # print(f"{date_str}: {len(books)}件")
+    books = search_books(from_year=date_str, to_year=date_str, cnt_per_page=500, max_pages=None, start_idx=1)
 
     for book in books:
         book["year"] = y
@@ -235,20 +222,19 @@ def search_year(y):
     return books
 
 
-# tsvに出力
 def write_tsv(name, books):
     output_file = f"data/{name}.tsv"
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)    # dataフォルダがなければ作成
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     books = [book for book in books if has_page_count(book)]
     books = remove_duplicates(books)
-    if os.path.exists(output_file):
-        # print(f"{output_file} は既にあるため上書きします。")
-        pass
     with open(output_file, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["year", "month", "page_count", "title", "creator", "publisher", "isbn", "link"], delimiter="\t")
+        writer = csv.DictWriter(
+            f,
+            fieldnames=["year", "month", "page_count", "title", "creator", "publisher", "isbn", "link"],
+            delimiter="\t",
+        )
         writer.writeheader()
         writer.writerows(books)
-    # print(f"{len(books)}件のデータを {output_file} に保存しました。")
     print_page_stats(books, name)
 
 
@@ -261,6 +247,8 @@ def search_years_and_write_tsv(from_year, to_year):
 
 
 if __name__ == "__main__":
-    # 使用例: 1990年から1999年までのデータを取得しTSVファイルを出力
-    for y in range(1990, 2000):
-        search_years_and_write_tsv(y, y)
+    # Change these years to select the range to summarize.
+    from_year = 2010
+    to_year = 2019
+
+    search_years_and_write_tsv(from_year, to_year)
